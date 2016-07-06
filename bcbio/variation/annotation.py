@@ -158,3 +158,8 @@ def annotate_nongatk_vcf(orig_file, bam_files, dbsnp_file, ref_file, config):
                 broad_runner.run_gatk(params)
         vcfutils.bgzip_and_index(out_file, config)
         return out_file
+
+def annotate_annovar_vcf(orig_file, bam_files, config):
+    """Annotate a VCF file using Annovar.
+    """
+    orig_file = vcfutils.bgzip_and_index(orig_file, config)
