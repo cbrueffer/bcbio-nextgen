@@ -7,6 +7,7 @@ import os
 
 from bcbio import broad, utils
 from bcbio.distributed.transaction import file_transaction
+from bcbio.pipeline import config_utils
 from bcbio.provenance import do
 from bcbio.variation import vcfutils
 
@@ -159,7 +160,41 @@ def annotate_nongatk_vcf(orig_file, bam_files, dbsnp_file, ref_file, config):
         vcfutils.bgzip_and_index(out_file, config)
         return out_file
 
-def annotate_annovar_vcf(orig_file, bam_files, config):
+def annovar_cmdline_from_config(config):
+    annovar_config = config_utils.get_program("annovar", config)
+
+    # ANN_DB_INPUT should be a list of tuples like so:
+    # ANN_DB_INPUT = [("refGene", "g"), ("knownGene", "g")]
+    ANN_DATABASES, ANN_DATABASES_OPERATIONS = zip(*ANN_DB_INPUT)
+    ANN_DATABASES = ",".join(ANN_DATABASES)
+    ANN_DATABASES_OPERATIONS = ",".join(ANN_DATABASES_OPERATIONS)
+
+    BUILDVER = "hg19"
+    ANNOVAR_DB_DIR = "humandb/"
+    NASTRING = "NA"
+    NUM_THREADS = 4
+
+    cmd = "annotate_variation.pl"
+    cmd += " --remove"  # remove tmp files
+    cmd += " --buildver (BUILDVER)"
+    cmd += " (ANNOVAR_DB_DIR)"
+    cmd += " -protocol (ANN_DATABASES)"
+    cmd += " -operation (ANN_DATABASES_OPERATIONS)"
+    cmd += " -nastring (NASTRING)"
+    cmd += " -thread (NUM_THREADS)"
+    cmd += " -vcfinput"  # i/o are VCF files
+
+    return cmd
+
+def annotate_vcf_annovar(orig_file, bam_files, config):
     """Annotate a VCF file using Annovar.
     """
     orig_file = vcfutils.bgzip_and_index(orig_file, config)
+    out_file = "%s-annovarann%s" % utils.splitext_plus(orig_file)
+    if not utils.file_exists(out_file):
+        with file_transaction(config, out_file) as tx_out_file:
+            cmd = annovar_cmdline_from_config(config)
+
+            do.run(cmd, "Running Annovar annotation...", None)
+
+    return out_file
