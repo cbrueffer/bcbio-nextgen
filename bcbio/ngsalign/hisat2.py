@@ -22,7 +22,7 @@ def align(fastq_file, pair_file, ref_file, names, align_dir, data):
     else:
         final_file = None
     if not file_exists(out_file) and (final_file is None or not file_exists(final_file)):
-        cmd = ("{hisat2} --new-summary -x {ref_file} -p {num_cores} {quality_flag} {stranded_flag} "
+        cmd = ("{hisat2} -x {ref_file} -p {num_cores} {quality_flag} {stranded_flag} "
                "{rg_flags} ")
         if paired:
             cmd += "-1 {fastq_file} -2 {pair_file} "
