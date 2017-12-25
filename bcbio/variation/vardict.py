@@ -166,7 +166,7 @@ def _run_vardict_caller(align_bams, items, ref_file, assoc_files,
                 vcfutils.merge_variant_files(orig_files=sample_vcf_names,
                                              out_file=tx_out_file, ref_file=ref_file,
                                              config=config, region=bamprep.region_to_gatk(region))
-        if assoc_files.get("dbsnp"):
+        if False:
             annotation.add_dbsnp(raw_file, assoc_files["dbsnp"], items[0], out_file)
         else:
             utils.symlink_plus(raw_file, out_file)
