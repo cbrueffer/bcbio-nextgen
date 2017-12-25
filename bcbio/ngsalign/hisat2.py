@@ -28,13 +28,18 @@ def align(fastq_file, pair_file, ref_file, names, align_dir, data):
     # if assembling transcripts, set flags that cufflinks/stringtie can use
     if dd.get_transcript_assembler(data):
         cmd += "--dta-cufflinks "
-    if dd.get_analysis(data).lower() == "rna-seq":
-        gtf_file = dd.get_gtf_file(data)
-        splicesites = os.path.join(os.path.dirname(gtf_file),
-                                   "ref-transcripts-splicesites.txt")
-        if not file_exists(splicesites):
-            splicesites = create_splicesites_file(gtf_file, align_dir, data)
-        cmd += "--known-splicesite-infile {splicesites} "
+
+    # XXXCB this whole block is enabled unconditionally now
+    gtf_file = dd.get_gtf_file(data)
+    splicesites = os.path.join(os.path.dirname(gtf_file),
+                                "ref-transcripts-splicesites.txt")
+    if not file_exists(splicesites):
+        splicesites = create_splicesites_file(gtf_file, align_dir, data)
+    cmd += "--known-splicesite-infile {splicesites} "
+
+    # apply additional hisat2 options
+    cmd += " ".join(_get_options_from_config(data))
+
     message = "Aligning %s and %s with hisat2." %(fastq_file, pair_file)
     with file_transaction(data, out_file) as tx_out_file:
         cmd += " | " + postalign.sam_to_sortbam_cl(data, tx_out_file)
@@ -65,6 +70,13 @@ def _get_quality_flag(data):
         return "--solexa-quals"
     else:
         return "--phred33"
+
+def _get_options_from_config(config):
+    opts = []
+    resources = config_utils.get_resources("hisat2", config)
+    if resources.get("options"):
+        opts += [str(x) for x in resources["options"]]
+    return opts
 
 def _get_stranded_flag(data, paired):
     strandedness = dd.get_strandedness(data)
