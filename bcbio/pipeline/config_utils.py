@@ -9,6 +9,8 @@ import pprint
 import sys
 import yaml
 
+from bcbio import utils
+
 import toolz as tz
 
 class CmdNotFound(Exception):
@@ -333,11 +335,11 @@ def convert_to_bytes(mem_str):
     """Convert a memory specification, potentially with M or G, into bytes.
     """
     if str(mem_str)[-1].upper().endswith("G"):
-        return int(mem_str[:-1]) * 1024 * 1024
+        return int(round(float(mem_str[:-1]) * 1024 * 1024))
     elif str(mem_str)[-1].upper().endswith("M"):
-        return int(mem_str[:-1]) * 1024
+        return int(round(float(mem_str[:-1]) * 1024))
     else:
-        return int(mem_str)
+        return int(round(float(mem_str)))
 
 def adjust_cores_to_mb_target(target_mb, mem_str, cores):
     """Scale core usage to match a Mb/core target.
